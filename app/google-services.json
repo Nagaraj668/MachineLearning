@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "543152682911",
+    "firebase_url": "https://machinelearning-c6c88.firebaseio.com",
+    "project_id": "machinelearning-c6c88",
+    "storage_bucket": "machinelearning-c6c88.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:543152682911:android:d4acd94122819f2279efaa",
+        "android_client_info": {
+          "package_name": "in.codefordevs.machinelearning"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "543152682911-t92fdtm2eibtffpfn51krbvnog8egma5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "in.codefordevs.machinelearning",
+            "certificate_hash": "3f4e2aafad765d76e4db6954070d7f378a7194c4"
+          }
+        },
+        {
+          "client_id": "543152682911-eqn584dietdv8oiku7848ivea9c5upt4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDL-GlhFJO54jFq-nJUPyN0q_QEa7F6QB0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "543152682911-eqn584dietdv8oiku7848ivea9c5upt4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
