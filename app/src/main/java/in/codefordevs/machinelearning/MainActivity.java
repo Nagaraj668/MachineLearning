@@ -16,6 +16,7 @@ import com.google.firebase.ml.vision.FirebaseVision;
 import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 import com.google.firebase.ml.vision.label.FirebaseVisionImageLabel;
 import com.google.firebase.ml.vision.label.FirebaseVisionImageLabeler;
+import com.google.gson.Gson;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -31,7 +32,12 @@ import android.view.MenuItem;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import in.codefordevs.machinelearning.activity.ImageLabelActivity;
 import in.codefordevs.machinelearning.listener.PermissionListener;
+import in.codefordevs.machinelearning.model.ImageLabelResult;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -116,14 +122,15 @@ public class MainActivity extends AppCompatActivity {
                     String imgDecodableString = cursor.getString(columnIndex);
                     cursor.close();
 
-                    detectLabels(BitmapFactory.decodeFile(imgDecodableString));
+                    detectLabels(BitmapFactory.decodeFile(imgDecodableString),
+                            selectedImage.getEncodedPath());
                 }
                 break;
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
 
-    private void detectLabels(Bitmap decodeFile) {
+    private void detectLabels(Bitmap decodeFile, String encodedPath) {
 
         imageView.setImageBitmap(decodeFile);
 
@@ -131,17 +138,25 @@ public class MainActivity extends AppCompatActivity {
         FirebaseVisionImageLabeler labeler = FirebaseVision.getInstance()
                 .getOnDeviceImageLabeler();
 
+        List<ImageLabelResult> imageLabelResults = new ArrayList<>();
 
         labeler.processImage(image)
                 .addOnSuccessListener((labels) -> {
                     for (FirebaseVisionImageLabel label : labels) {
                         String text = label.getText();
-                        String entityId = label.getEntityId();
                         float confidence = label.getConfidence();
-
-                        System.out.println("text: " + text + ", Confidence: " + confidence);
+                        imageLabelResults.add(new ImageLabelResult(text, confidence));
                     }
 
+                    Gson gson = new Gson();
+                    String labelResult = gson.toJson(imageLabelResults);
+
+                    Intent intent = new Intent(getApplicationContext()
+                            , ImageLabelActivity.class);
+                    intent.putExtra("RESULT", labelResult);
+                    intent.putExtra("IMG", encodedPath);
+
+                    startActivity(intent);
                 })
                 .addOnFailureListener((e) -> {
                     e.printStackTrace();
