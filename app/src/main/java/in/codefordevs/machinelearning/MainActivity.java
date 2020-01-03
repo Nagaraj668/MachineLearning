@@ -7,15 +7,25 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Point;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.ml.vision.FirebaseVision;
+import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcode;
+import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetector;
+import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetectorOptions;
 import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 import com.google.firebase.ml.vision.label.FirebaseVisionImageLabel;
 import com.google.firebase.ml.vision.label.FirebaseVisionImageLabeler;
+import com.google.firebase.ml.vision.text.FirebaseVisionText;
+import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer;
 import com.google.gson.Gson;
 
 import androidx.annotation.NonNull;
@@ -122,13 +132,140 @@ public class MainActivity extends AppCompatActivity {
                     String imgDecodableString = cursor.getString(columnIndex);
                     cursor.close();
 
-                    detectLabels(BitmapFactory.decodeFile(imgDecodableString),
-                            selectedImage.getEncodedPath());
+                    /*detectLabels(BitmapFactory.decodeFile(imgDecodableString),
+                            selectedImage.getEncodedPath());*/
+
+                    // detectText(BitmapFactory.decodeFile(imgDecodableString), selectedImage.getEncodedPath());
+
+                    scanBarcode(BitmapFactory.decodeFile(imgDecodableString), selectedImage.getEncodedPath());
                 }
                 break;
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
+
+    private void scanBarcode(Bitmap decodeFile, String encodedPath) {
+        FirebaseVisionBarcodeDetectorOptions options =
+                new FirebaseVisionBarcodeDetectorOptions.Builder()
+                        .setBarcodeFormats(
+                                FirebaseVisionBarcode.FORMAT_QR_CODE,
+                                FirebaseVisionBarcode.FORMAT_AZTEC)
+                        .build();
+
+        FirebaseVisionImage image = FirebaseVisionImage.fromBitmap(decodeFile);
+
+        FirebaseVisionBarcodeDetector detector = FirebaseVision.getInstance()
+                .getVisionBarcodeDetector();
+
+
+        Task<List<FirebaseVisionBarcode>> result = detector.detectInImage(image)
+                .addOnSuccessListener(new OnSuccessListener<List<FirebaseVisionBarcode>>() {
+                    @Override
+                    public void onSuccess(List<FirebaseVisionBarcode> barcodes) {
+                        // Task completed successfully
+                        // ...
+
+                        List<ImageLabelResult> imageLabelResults = new ArrayList<>();
+
+                        for (FirebaseVisionBarcode barcode: barcodes) {
+                            String rawValue = barcode.getRawValue();
+
+                            imageLabelResults.add(new ImageLabelResult(rawValue, 0));
+
+                            int valueType = barcode.getValueType();
+
+                            switch (valueType) {
+                                case FirebaseVisionBarcode.TYPE_WIFI:
+                                    String ssid = barcode.getWifi().getSsid();
+                                    String password = barcode.getWifi().getPassword();
+                                    int type = barcode.getWifi().getEncryptionType();
+                                    break;
+                                case FirebaseVisionBarcode.TYPE_URL:
+                                    String title = barcode.getUrl().getTitle();
+                                    String url = barcode.getUrl().getUrl();
+                                    break;
+                            }
+                        }
+
+                        Gson gson = new Gson();
+                        String labelResult = gson.toJson(imageLabelResults);
+
+                        Intent intent = new Intent(getApplicationContext()
+                                , ImageLabelActivity.class);
+                        intent.putExtra("RESULT", labelResult);
+                        intent.putExtra("IMG", encodedPath);
+
+                        startActivity(intent);
+
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        // Task failed with an exception
+                        // ...
+                    }
+                });
+
+    }
+
+    private void detectText(Bitmap decodeFile, String encodedPath) {
+        imageView.setImageBitmap(decodeFile);
+
+        FirebaseVisionImage image = FirebaseVisionImage.fromBitmap(decodeFile);
+
+        FirebaseVisionTextRecognizer detector = FirebaseVision.getInstance()
+                .getOnDeviceTextRecognizer();
+
+        Task<FirebaseVisionText> result =
+                detector.processImage(image)
+                        .addOnSuccessListener(new OnSuccessListener<FirebaseVisionText>() {
+                            @Override
+                            public void onSuccess(FirebaseVisionText firebaseVisionText) {
+                                // Task completed successfully
+                                // ...
+
+                                String resultText = firebaseVisionText.getText();
+
+                                List<ImageLabelResult> imageLabelResults = new ArrayList<>();
+
+                                for (FirebaseVisionText.TextBlock block : firebaseVisionText.getTextBlocks()) {
+                                    String blockText = block.getText();
+                                    imageLabelResults.add(new ImageLabelResult(blockText, 0));
+
+                                    for (FirebaseVisionText.Line line : block.getLines()) {
+                                        blockText = line.getText();
+                                        imageLabelResults.add(new ImageLabelResult(blockText, 0));
+
+                                        for (FirebaseVisionText.Element element : line.getElements()) {
+                                            blockText = element.getText();
+                                            imageLabelResults.add(new ImageLabelResult(blockText, 0));
+                                        }
+                                    }
+                                }
+
+                                Gson gson = new Gson();
+                                String labelResult = gson.toJson(imageLabelResults);
+
+                                Intent intent = new Intent(getApplicationContext()
+                                        , ImageLabelActivity.class);
+                                intent.putExtra("RESULT", labelResult);
+                                intent.putExtra("IMG", encodedPath);
+
+                                startActivity(intent);
+                            }
+                        })
+                        .addOnFailureListener(
+                                new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(@NonNull Exception e) {
+                                        // Task failed with an exception
+                                        // ...
+                                    }
+                                });
+
+    }
+
 
     private void detectLabels(Bitmap decodeFile, String encodedPath) {
 

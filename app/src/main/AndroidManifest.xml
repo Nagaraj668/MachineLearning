@@ -14,11 +14,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".activity.ImageLabelActivity"></activity>
+        <activity android:name=".activity.ImageLabelActivity"/>
 
         <meta-data
             android:name="com.google.firebase.ml.vision.DEPENDENCIES"
-            android:value="label" />
+            android:value="ocr,label" />
 
         <activity
             android:name=".MainActivity"
